@@ -1,42 +1,36 @@
 pancakes_dfs(InitialState, Operators, States) :-
-    spatula(InitialState,1,States,NewState,Op),
-    [H1 | T1] = States,
-    [H2 | T2] = Operators,
-    H1 = NewState,
-    H2 = Op,
-    pancakes_dfs(InitialState, T2, T1).
+    spatula(InitialState,InitialState,1,[],[],States,Operators).
 
-pancakes_dfs(InitialState,[],[H | T]) :- 
-    T = [] ,
-    length(InitialState,N),
-    ordered_list(N,1,L),
-    H = L.
-
-spatula(InitialState,_,States,CurrentState,_) :-
-    [H | T] = States,
-    T = [],
+spatula(InitialState,CurrentState,N,TempOp,TempStates,States,Operators) :-
     length(InitialState,Len),
     ordered_list(Len,1,L),
-    H = L,
-    CurrentState = L.
-    
-
-spatula(InitialState,N,States,CurrentState,N) :-
-    length(InitialState,Len),
     NLen is Len - 1,
     N =< NLen,
+    CurrentState \= L,
     flip(CurrentState,N,NewState),
     NewState \= InitialState,
-    in_States(NewState,States),
-    spatula(InitialState,1,States,NewState,1).
+    in_States(NewState,TempStates),
+    [H1 | T1] = States,
+    H1 = NewState,
+    [H2 | T2] = Operators,
+    H2 = N,
+    append(TempOp,[N],NTempOp),
+    append(TempStates,[NewState],NTempStates),
+    spatula(InitialState,NewState,1,NTempOp,NTempStates,T1,T2).
 
-    
-spatula(InitialState,N,States,CurrentState,N) :-
-    length(InitialState,Len),
-    NLen is Len - 1,
-    N =< NLen,
+spatula(InitialState,CurrentState,N,TempOp,TempStates,States,Operators) :-
     NN is N + 1,
-    spatula(InitialState,NN,States,CurrentState,NN).
+    length(InitialState,Len),
+    ordered_list(Len,1,L),
+    NLen is Len - 1,
+    NN =< NLen,
+    CurrentState \= L,
+    spatula(InitialState,CurrentState,NN,TempOp,TempStates,States,Operators).
+
+spatula(InitialState,CurrentState,_,_,_,[],[]) :-
+    length(InitialState,N),
+    ordered_list(N,1,L),
+    CurrentState = L.
 
 flip(InitialState,N,NewState) :-
     length(InitialState,Len),
