@@ -14,30 +14,39 @@ activity(a13, act(17,19)).
 activity(a14, act(18,20)).
 activity(a15, act(19,20)).
 
-person(NP,Counter,MT,Assigned,ASP) :-
-    Assigned \= [],
+find_ASP(NP,Counter,MT,Assigned,ASP) :-
+    person(NP,Counter,MT,Assigned,Assigned2,ASP),
+    count_activities(Number),
+    length(Assigned2,Number).
+
+person(NP,Counter,MT,Assigned,Assigned2,ASP) :-
     Counter =< NP,
     [H | T] = ASP,
-    activity_sequence(MT,0,Assigned,L,Time),
+    activity_sequence(MT,0,0,Assigned,L,Time),
+    append(L,Tail,Assigned2),
     H = Counter - L - Time,
     NCounter is Counter + 1,
     append(Assigned,L,NAssigned),
-    person(NP,NCounter,MT,NAssigned,T).
+    person(NP,NCounter,MT,NAssigned,Tail,T).
 
-person(NP,Counter,MT,[],ASP) :-
-    Counter =< NP,
-    [H | T] = ASP,
-    activity_sequence(MT,0,[],L,Time),
-    H = Counter - L - Time,
-    NCounter is Counter + 1,
-    append([],L,NAssigned),
-    person(NP,NCounter,MT,NAssigned,T).
-
-person(NP,Counter,_,_,[]) :-
+person(NP,Counter,_,_,[],[]) :-
     Counter > NP.
     
 
-activity_sequence(MT,CurrentTime,Assigned,L,TotalTime) :-
+activity_sequence(MT,CurrentTime,0,[],L,TotalTime) :-
+    activity(X,act(Start,End)),
+    Time is End - Start,
+    NCurrentTime is CurrentTime + Time,
+    NCurrentTime =< MT,
+    [H | T] = L,
+    H = X,
+    assigned(X,[]),
+    append([],[X],NAssigned),
+    activity_sequence(MT,NCurrentTime,X,NAssigned,T,NTotalTime),
+    TotalTime is Time + NTotalTime.
+
+activity_sequence(MT,CurrentTime,0,Assigned,L,TotalTime) :-
+    Assigned \= [],
     activity(X,act(Start,End)),
     Time is End - Start,
     NCurrentTime is CurrentTime + Time,
@@ -46,10 +55,31 @@ activity_sequence(MT,CurrentTime,Assigned,L,TotalTime) :-
     H = X,
     assigned(X,Assigned),
     append(Assigned,[X],NAssigned),
-    activity_sequence(MT,NCurrentTime,NAssigned,T,NTotalTime),
+    activity_sequence(MT,NCurrentTime,X,NAssigned,T,NTotalTime),
     TotalTime is Time + NTotalTime.
 
-activity_sequence(_,_,_,[],0).
+activity_sequence(MT,CurrentTime,PreviousAct,Assigned,L,TotalTime) :-
+    PreviousAct \= 0,
+    Assigned \= [],
+    activity(X,act(Start,End)),
+    Time is End - Start,
+    NCurrentTime is CurrentTime + Time,
+    NCurrentTime =< MT,
+    [H | T] = L,
+    H = X,
+    assigned(X,Assigned),
+    activity(PreviousAct,act(_,PrevEnd)),
+    NPrevEnd is PrevEnd + 1,
+    NPrevEnd =< Start,
+    append(Assigned,[X],NAssigned),
+    activity_sequence(MT,NCurrentTime,X,NAssigned,T,NTotalTime),
+    TotalTime is Time + NTotalTime.
+
+activity_sequence(_,_,_,_,[],0).
+
+count_activities(Counter) :-     
+	findall(_,activity(_, act(_,_)),Solutions),
+  	length(Solutions, Counter).
 
 check([],_).
 
@@ -65,3 +95,4 @@ assigned(CurrentState,States) :-
     [H | T] = States,
     CurrentState \= H,
     assigned(CurrentState,T).
+    
