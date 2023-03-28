@@ -95,4 +95,3 @@ assigned(CurrentState,States) :-
     [H | T] = States,
     CurrentState \= H,
     assigned(CurrentState,T).
-    
