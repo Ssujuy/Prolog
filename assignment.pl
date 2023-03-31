@@ -31,22 +31,39 @@ person(NP,Counter,MT,Assigned,Assigned2,ASP) :-
 
 person(NP,Counter,_,_,[],[]) :-
     Counter > NP.
-    
 
-activity_sequence(MT,CurrentTime,0,[],L,TotalTime) :-
-    activity(X,act(Start,End)),
+sequence(MT,CurrentTime,0,TotalActivities,L,TotalTime) :-
+    [H1 | T1] = TotalActivities,
+    activity(H1,act(Start,End)),
     Time is End - Start,
     NCurrentTime is CurrentTime + Time,
     NCurrentTime =< MT,
-    [H | T] = L,
-    H = X,
-    assigned(X,[]),
-    append([],[X],NAssigned),
-    activity_sequence(MT,NCurrentTime,X,NAssigned,T,NTotalTime),
+    [H2 | T2] = L,
+    H1 = H2,
+    sequence(MT,NCurrentTime,H1,T1,T2,NTotalTime),
     TotalTime is Time + NTotalTime.
 
+sequence(MT,CurrentTime,PreviousAct,TotalActivities,L,TotalTime) :-
+    [H1 | T1] = TotalActivities,
+    activity(H1,act(Start,End)),
+    activity(PreviousAct,act(_,PrevEnd)),
+    NPrevEnd is PrevEnd + 1,
+    NPrevEnd =< Start,
+    Time is End - Start,
+    NCurrentTime is CurrentTime + Time,
+    NCurrentTime =< MT,
+    [H2 | T2] = L,
+    H1 = H2,
+    sequence(MT,NCurrentTime,H1,T1,T2,NTotalTime),
+    TotalTime is Time + NTotalTime.
+
+sequence(MT,CurrentTime,PreviousAct,TotalActivities,L,TotalTime) :-
+    [_ | T] = TotalActivities,
+    sequence(MT,CurrentTime,PreviousAct,T,L,TotalTime).
+
+sequence(_,_,_,_,[],0).
+
 activity_sequence(MT,CurrentTime,0,Assigned,L,TotalTime) :-
-    Assigned \= [],
     activity(X,act(Start,End)),
     Time is End - Start,
     NCurrentTime is CurrentTime + Time,
@@ -60,17 +77,16 @@ activity_sequence(MT,CurrentTime,0,Assigned,L,TotalTime) :-
 
 activity_sequence(MT,CurrentTime,PreviousAct,Assigned,L,TotalTime) :-
     PreviousAct \= 0,
-    Assigned \= [],
     activity(X,act(Start,End)),
+    activity(PreviousAct,act(_,PrevEnd)),
+    NPrevEnd is PrevEnd + 1,
+    NPrevEnd =< Start,
     Time is End - Start,
     NCurrentTime is CurrentTime + Time,
     NCurrentTime =< MT,
     [H | T] = L,
     H = X,
     assigned(X,Assigned),
-    activity(PreviousAct,act(_,PrevEnd)),
-    NPrevEnd is PrevEnd + 1,
-    NPrevEnd =< Start,
     append(Assigned,[X],NAssigned),
     activity_sequence(MT,NCurrentTime,X,NAssigned,T,NTotalTime),
     TotalTime is Time + NTotalTime.
