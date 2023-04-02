@@ -1,5 +1,18 @@
+pancakes_ids(InitialState, Operators, States) :-
+    spatula_ids(InitialState,1,1,States,Operators).
+
+spatula_ids(InitialState,1,MaxLen,States,Operators) :-
+    spatula(InitialState,InitialState,1,[],[],States,Operators),
+    length(Operators,MaxLen),!.
+
+spatula_ids(InitialState,1,MaxLen,States,Operators) :-
+    NMaxLen is MaxLen + 1,
+    spatula_ids(InitialState,1,NMaxLen,States,Operators).
+
 pancakes_dfs(InitialState, Operators, States) :-
     spatula(InitialState,InitialState,1,[],[],States,Operators).
+
+/*spatula(7) recursively chooses an action if the state has not been visited , then finds operator,states*/
 
 spatula(InitialState,CurrentState,N,TempOp,TempStates,States,Operators) :-
     length(InitialState,Len),
@@ -32,6 +45,8 @@ spatula(InitialState,CurrentState,_,_,_,[],[]) :-
     ordered_list(N,1,L),
     CurrentState = L.
 
+/*basically flips a list from N-element*/
+
 flip(InitialState,N,NewState) :-
     length(InitialState,Len),
     N < Len,
@@ -39,15 +54,16 @@ flip(InitialState,N,NewState) :-
     reverse_list(Top,[],Reversed),
     concatenate_list(Bottom,Reversed,NewState).
 
-in_States(_,[]).
+/*checks if CurrentState is in a list of States*/
 
 in_States(CurrentState,States) :-
     [H | T] = States,
     CurrentState \= H,
     in_States(CurrentState,T).
 
-split_list([],Len,_,Counter,[],[]) :-
-    Counter > Len.
+in_States(_,[]).
+
+/*splits the list on N-element*/
 
 split_list(InitialState,Len,_,Counter,Top,Bottom) :- 
     Counter = Len,
@@ -75,6 +91,11 @@ split_list(InitialState,Len,N,Counter,Top,Bottom) :-
     NCounter is Counter + 1,
     split_list(T1,Len,N,NCounter,Top,T2).
 
+split_list([],Len,_,Counter,[],[]) :-
+    Counter > Len.
+
+/*finds list of length Len , if Len is 4 list is [1,2,3,4]*/
+
 ordered_list(Len,Counter,Ordered) :-
     Counter =< Len,
     [H | T] = Ordered,
@@ -84,7 +105,7 @@ ordered_list(Len,Counter,Ordered) :-
 
 ordered_list(Len,Counter,[]) :- Len < Counter.
 
-concatenate_list([],[],[]). 
+/*Concatenates 2 lists in 1*/
 
 concatenate_list([],Top,Concat) :-
     [H1 | T1] = Top,
@@ -98,7 +119,10 @@ concatenate_list(Bottom,Top,Concat) :-
     H2 = H1,
 	concatenate_list(T1,Top,T2). 
 
+concatenate_list([],[],[]). 
+
+/*reverses order of the list*/
+
  reverse_list([],Reversed,Reversed).
 
  reverse_list([H|T],T1,Reversed) :- reverse_list(T,[H|T1],Reversed).
-
