@@ -7,26 +7,31 @@ black(4,3).
 black(5,1).
 black(5,5).
 
+//na kanw ena kathgorhma fill crossword to opoio 8a phgainei apo thn arxh mexri to telos ths listas WordsAscii, 8a kalei 8a kalei thn match kai 8a stamataei gia kenes tis listes Ascii kai EmptyWords,
+//
 
 words([adam,al,as,do,ik,lis,ma,oker,ore,pirus,po,so,ur]).    
 
 crossword(L) :-
    empty_spots(L,EmptyWordsOrdered),
-   ascii_list(WordsAscii),
-   fill_crossword(WordsAscii,EmptyWordsOrdered).
+   ascii_list(WordsAscii).
 	
-fill_crossword(WordsAscii,EmptyWordsOrdered) :-
+fill_crossword(WordsAscii,EmptyWordsOrdered,Word) :-
     [H1 | T1] = WordsAscii,
     [H2 | T2] = EmptyWordsOrdered,
-    H1 = H2,
-   	fill_crossword(T1,T2). 
+    Word = H2,
+    find_next(WordsAscii,Word,NewWord),
+    remove_list(WordsAscii,Word,NewWordsAscii),
+   	fill_crossword(NewWordsAscii,T2,NewWord). 
 
 fill_crossword(WordsAscii,EmptyWordsOrdered) :-
-    [_ | T1] = WordsAscii,
-    [_ | T2] = EmptyWordsOrdered,
-	fill_crossword(T1,T2).    
+    [H | _] = EmptyWordsOrdered,
+    find_next(WordsAscii,Word,NewWord),
+    length(NewWord,Len),
+    length(H,Len),
+    fill_crossword(WordsAscii,T2,NewWord). 
     
-fill_crossword([],[]).
+fill_crossword([],[],_).
 
 ascii_list(L) :-
     words(Words),
@@ -228,3 +233,14 @@ insert(X,[Y|T],[X,Y|T]) :-
     LenX > LenY.
 
 insert(X,[],[X]).
+
+# find_next(L,Item,Target) :-
+#     [H1 | T1] = L,
+#     H1 \= Item,
+
+
+# find_next(L,Item,Target) :-
+#     [H1 | T1] = L,
+#     H1 = Item,
+#     [H2 | T2] = T1,
+#     H2 = Target.
