@@ -7,32 +7,40 @@ black(4,3).
 black(5,1).
 black(5,5).
 
-//na kanw ena kathgorhma fill crossword to opoio 8a phgainei apo thn arxh mexri to telos ths listas WordsAscii, 8a kalei 8a kalei thn match kai 8a stamataei gia kenes tis listes Ascii kai EmptyWords,
-//
-
 words([adam,al,as,do,ik,lis,ma,oker,ore,pirus,po,so,ur]).    
 
 crossword(L) :-
    empty_spots(L,EmptyWordsOrdered),
-   ascii_list(WordsAscii).
-	
-fill_crossword(WordsAscii,EmptyWordsOrdered,Word) :-
-    [H1 | T1] = WordsAscii,
-    [H2 | T2] = EmptyWordsOrdered,
-    Word = H2,
-    find_next(WordsAscii,Word,NewWord),
-    remove_list(WordsAscii,Word,NewWordsAscii),
-   	fill_crossword(NewWordsAscii,T2,NewWord). 
+   ascii_list(WordsAscii),
+   fill_crossword(EmptyWordsOrdered,WordsAscii,[]).
 
-fill_crossword(WordsAscii,EmptyWordsOrdered) :-
-    [H | _] = EmptyWordsOrdered,
-    find_next(WordsAscii,Word,NewWord),
-    length(NewWord,Len),
-    length(H,Len),
-    fill_crossword(WordsAscii,T2,NewWord). 
+fill_crossword(EmptyWords,WordsAscii,[]) :-
+    [H1 | T1] = WordsAscii,
+    [H2 | _] = EmptyWords,
+    H1 = H2,
+    remove(EmptyWords,H2,NewEmptyWords),
+    [H3 | _] = NewEmptyWords,
+    NewSpot = H3,
+    fill_crossword(NewEmptyWords,T1,NewSpot).
+
+fill_crossword(EmptyWords,WordsAscii,Spot) :-
+    [H1 | T1] = WordsAscii,
+    H1 = Spot,
+    remove(EmptyWords,Spot,NewEmptyWords),
+    [H2 | _] = NewEmptyWords,
+    NewSpot = H2,
+    fill_crossword(NewEmptyWords,T1,NewSpot).
+
+fill_crossword(EmptyWords,WordsAscii,Spot) :-
+    find_next(EmptyWords,Spot,NewSpot),
+    fill_crossword(EmptyWords,WordsAscii,NewSpot).
+
+fill_crossword(EmptyWords,[],_) :-
+    check_empty_list(EmptyWords),
+    fill_crossword([],[],_).
     
 fill_crossword([],[],_).
-
+    
 ascii_list(L) :-
     words(Words),
     sort_list(Words,OrderedWords),
@@ -234,13 +242,42 @@ insert(X,[Y|T],[X,Y|T]) :-
 
 insert(X,[],[X]).
 
-# find_next(L,Item,Target) :-
-#     [H1 | T1] = L,
-#     H1 \= Item,
 
+remove(L,X,Final) :-
+    [H1 | T1] = L,
+    [H2 | T2] = Final,
+    H1 \= X,
+    H1 = H2,
+    remove(T1,X,T2),!.
 
-# find_next(L,Item,Target) :-
-#     [H1 | T1] = L,
-#     H1 = Item,
-#     [H2 | T2] = T1,
-#     H2 = Target.
+remove(L,X,Final) :-
+    [H | T1] = L,
+    H = X,
+    remove(T1,[],Final),!.
+
+remove([],_,[]).
+
+find_next(L,X,Y) :- 
+    [H | T] = L,
+    X \= H,
+    find_next(T,X,Y).
+
+find_next(L,X,Y) :-
+    [H1 | T1] = L,
+    [H2 | _] = T1,
+    X = H1,
+    Y = H2.
+
+check_empty_list(L) :-
+    [H | T] = L,
+    check_empty(H),
+    check_empty_list(T).
+
+check_empty_list([]).
+
+check_empty(L) :-
+    [H | T] = L,
+    number(H),
+    check_empty(T).
+
+check_empty([]).
