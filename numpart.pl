@@ -28,3 +28,19 @@ ordered_list(Len,Counter,Ordered) :-
     ordered_list(Len,NCounter,T).
 
 ordered_list(Len,Counter,[]) :- Len < Counter.
+
+find_sum(L,Sum,SumL) :-
+    [H | T] = L,
+    NSum is Sum + H,
+    check_sum(T,Sum,SumL).
+
+check_sum([],SumL,SumL).
+
+check_square_sum(L,SqSum,SqSumL) :-
+    [H | T] = L,
+    SqH is H * H,
+    NSqSum is SqSum + SqH,
+    check_square_sum(T,NSqSum.SqSumL).
+
+check_square_sum([],SqSumL,SqSumL).
+
