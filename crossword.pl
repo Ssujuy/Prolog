@@ -7,45 +7,95 @@ black(4,3).
 black(5,1).
 black(5,5).
 
-words([adam,al,as,do,ik,lis,ma,oker,ore,pirus,po,so,ur]).    
+/*Find the answer as 2d list , convert ascii characters to letters , print solution*/
 
-crossword(L) :-
+crossword(S) :-
+    answer(S,LAscii),
+    to_letters(LAscii,L),
+    write_x(L).
+
+/*prints list of characters*/
+
+write_x(L) :-
+    [H | T] = L,
+    write_xy(H),
+    nl,
+	write_x(T).
+
+write_x([]).
+
+/*prints 1 element of the list at a time*/
+
+write_xy(L) :-
+    [H | T] = L,
+    H \= ###,
+    write(' '),
+    write(H),
+    write('  '),
+    write_xy(T).
+
+write_xy(L) :-
+    [H | T] = L,
+    H = ###,
+    write(H),
+    write(' '),
+    write_xy(T).
+
+write_xy([]).
+
+/*find answer to the crossword*/
+
+answer(S,L) :-
    empty_spots(L,EmptyWordsOrdered),
-   ascii_list(WordsAscii),
-   fill_crossword(EmptyWordsOrdered,WordsAscii,[]).
+   ascii_list(S,WordsAscii),
+   fill_crossword(WordsAscii,EmptyWordsOrdered,[]),!.
+    
 
-fill_crossword(EmptyWords,WordsAscii,[]) :-
-    [H1 | T1] = WordsAscii,
-    [H2 | _] = EmptyWords,
-    H1 = H2,
-    remove(EmptyWords,H2,NewEmptyWords),
-    [H3 | _] = NewEmptyWords,
-    NewSpot = H3,
-    fill_crossword(NewEmptyWords,T1,NewSpot).
+/*recursively filling the empty words list with words as ascii characters */
+/*Both ascii words and empty words are sorted from biggest to lowest length*/
 
-fill_crossword(EmptyWords,WordsAscii,Spot) :-
-    [H1 | T1] = WordsAscii,
-    H1 = Spot,
-    remove(EmptyWords,Spot,NewEmptyWords),
-    [H2 | _] = NewEmptyWords,
-    NewSpot = H2,
-    fill_crossword(NewEmptyWords,T1,NewSpot).
+fill_crossword(WordsAscii,EmptyWords,[]) :-
+    WordsAscii \= [],
+	[H1 | T1] = WordsAscii,
+    [H2 | _] = T1,
+    [H3 | T3] = EmptyWords,
+    H1 = H3,
+    fill_crossword(T1,T3,H2).
+    
 
-fill_crossword(EmptyWords,WordsAscii,Spot) :-
-    find_next(EmptyWords,Spot,NewSpot),
-    fill_crossword(EmptyWords,WordsAscii,NewSpot).
+fill_crossword(WordsAscii,EmptyWords,Word) :-
+    WordsAscii \= [],
+    [H1 | _] = EmptyWords,
+    Word = H1,
+    remove(EmptyWords,H1,NewEmptyWords),
+    remove(WordsAscii,Word,NewWordsAscii),
+    [H2 | _] = NewWordsAscii,
+    fill_crossword(NewWordsAscii,NewEmptyWords,H2).
 
-fill_crossword(EmptyWords,[],_) :-
+fill_crossword(WordsAscii,EmptyWords,Word) :-
+    WordsAscii \= [],
+    [H | _] = EmptyWords,
+    find_next(WordsAscii,Word,NewWord),
+    length(H,Len),
+    length(NewWord,Len),
+    \+check_empty_list(EmptyWords),
+    fill_crossword(WordsAscii,EmptyWords,NewWord). 
+
+fill_crossword(WordsAscii,EmptyWords,_) :-
+    WordsAscii \= [],
     check_empty_list(EmptyWords),
+    remove_all(WordsAscii,EmptyWords),
     fill_crossword([],[],_).
     
 fill_crossword([],[],_).
+
+/**/
     
-ascii_list(L) :-
-    words(Words),
-    sort_list(Words,OrderedWords),
+ascii_list(S,L) :-
+    sort_list(S,OrderedWords),
     words_ascii(OrderedWords,L).
     
+/*Convert Words(list of words) to list of ascii words*/
 
 words_ascii(Words,L) :-
     [H1 | T1] = Words,
@@ -54,6 +104,8 @@ words_ascii(Words,L) :-
     words_ascii(T1,T2).
 
 words_ascii([],[]).
+
+/*Find all empty spots set black spots , create empty words list*/
 
 empty_spots(L,EmptyWordsOrdered) :-
     length(L,5),
@@ -154,6 +206,7 @@ words_x(_,_,Y,[]) :-
     dimension(D),
     Y > D.
 
+/*sets defined black spots in crossword*/
 
 set_black(L,BlackSpots) :-
 	[H | T] = BlackSpots,
@@ -163,6 +216,8 @@ set_black(L,BlackSpots) :-
 	set_black(L,T).
 
 set_black(_,[]).
+
+/*Find element on position x,y*/
 
 index_xy(L,X,Y,XCounter,YCounter,Target) :-
    	index_y(L,Y,YCounter,YL),
@@ -184,6 +239,33 @@ index_y(L,Y,YCounter,Target) :-
 
 index_y([H | _],Y,Y,H).
 
+to_letters(LAscii,L) :-
+    [H1 | T1] = LAscii,
+    [H2 | T2] = L,
+    to_letters2(H1,H2),
+    to_letters(T1,T2).
+
+/*Conver list of ascii words to list of words*/
+
+to_letters([],[]).
+
+to_letters2(Ascii,L) :-
+    [H1 | T1] = Ascii,
+    [H2 | T2] = L,
+    H1 \= ###,
+    char_code(X,H1),
+    X = H2,
+    to_letters2(T1,T2).
+
+to_letters2(Ascii,L) :-
+    [H1 | T1] = Ascii,
+    [H2 | T2] = L,
+    H1 = ###,
+    H1 = H2,
+    to_letters2(T1,T2).
+
+to_letters2([],[]).
+    
 
 sort_list_length(List,Sorted) :-
     sorting_length(List,[],Sorted).
@@ -225,6 +307,8 @@ sorting([H|T],Acc,Sorted) :-
     insert(H,Acc,NAcc),
     sorting(T,NAcc,Sorted).
 
+/*Insert element in list*/
+
 insert(X,[Y|T],[Y|NT]) :- 
     name(X,LX),
     name(Y,LY),
@@ -242,6 +326,17 @@ insert(X,[Y|T],[X,Y|T]) :-
 
 insert(X,[],[X]).
 
+/*Remove all elements of list L2 from L1*/
+
+remove_all(L1,L2) :-
+    L1 \= [],
+    [H | T] = L2,
+    remove(L1,H,NewL1),
+    remove_all(NewL1,T).
+
+remove_all([],_).
+    
+/*Remove X element from list L*/
 
 remove(L,X,Final) :-
     [H1 | T1] = L,
@@ -257,10 +352,12 @@ remove(L,X,Final) :-
 
 remove([],_,[]).
 
+/*Find next element after X , from list L*/
+
 find_next(L,X,Y) :- 
     [H | T] = L,
     X \= H,
-    find_next(T,X,Y).
+    find_next(T,X,Y),!.
 
 find_next(L,X,Y) :-
     [H1 | T1] = L,
