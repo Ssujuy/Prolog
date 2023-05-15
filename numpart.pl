@@ -1,22 +1,44 @@
-Μία εκδοχή του προβλήματος διαμέρισης αριθμών είναι η εξής. Δεδομένου κάποιου
-άρτιου θετικού ακεραίου 𝑁, να διαμερισθεί το σύνολο 𝑆 = {1, 2, 3, ... , 𝑁} σε δύο
-υποσύνολα 𝑆1 και 𝑆2 (𝑆1 ∩ 𝑆2 = ∅, 𝑆1 ∪ 𝑆2 = 𝑆) τέτοια ώστε τα S1 και S2 να έχουν
-ίδιο πλήθος στοιχείων (|𝑆1| = |𝑆2|), το άθροισμα των στοιχείων του 𝑆1 να ισούται με
-το άθροισμα των στοιχείων του 𝑆2 (∑ 𝑖 = ∑ 𝑗𝑗∈𝑆2𝑖 ∈𝑆1 ) και το άθροισμα των
-τετραγώνων των στοιχείων του 𝑆1 να ισούται με το άθροισμα των τετραγώνων των
-στοιχείων του 𝑆2 (∑ 𝑖2 = ∑ 𝑗2
-𝑗∈𝑆2𝑖 ∈𝑆1 ). Για παράδειγμα, για 𝑁 = 8, το πρόβλημα
-έχει μία λύση, την 𝑆1 = {1, 4, 6, 7}, 𝑆2 = {2, 3, 5, 8}. Είναι προφανές ότι το πρόβλημα
-δεν έχει λύση αν το 𝑁 είναι περιττός. Επίσης, φαίνεται ότι υπάρχουν λύσεις μόνο για
-𝑁 που είναι πολλαπλάσια του 4 και μεγαλύτερα ή ίσα του 8, αλλά κάτι τέτοιο δεν έχει
-αποδειχθεί μαθηματικά.
-Page 2 of 14
-Ορίστε στο σύστημα λογικού προγραμματισμού της επιλογής σας ένα κατηγόρημα
-numpart/3, το ποίο όταν καλείται σαν numpart(N, L1, L2), για δεδομένο N, να
-επιστρέφει στα L1 και L2, μία διαμέριση του συνόλου {1, 2, 3, ..., N}, σύμφωνα με
-τον παραπάνω ορισμό, και τελικά, μέσω οπισθοδρόμησης, όλες τις διαφορετικές
-λύσεις. Κάποια παραδείγματα εκτέλεσης είναι τα εξής:
+:-lib(ic).
+:-lib(branch_and_bound).
 
+
+my_search(N,L1,L2):-
+    even(N),
+    Length is N // 2,
+    length(L1,Length),
+    length(L2,Length),  
+    L1#::1..N,
+    L2#::1..N,
+    diff_lists(L1,L2),
+    unique_element(L1),
+    unique_element(L2),
+    SumL1 #= N* (N + 1) / 4,
+    SumL1 #= SumL2,
+    SqSumL1 #=  SumL1* (2* N + 1) / 3,
+    SqSumL1 #= SqSumL2,
+    find_sum(L1,0,SumL1),
+    find_sum(L2,0,SumL2),
+    find_square_sum(L1,0,SqSumL1),
+    find_square_sum(L2,0,SqSumL2),
+    search(L1,0,input_order,indomain,complete,[]),
+    search(L2,0,input_order,indomain,complete,[]).
+
+/*bb_min(search(Tents,0,input_order,indomain,complete,[]),Cost,bb_options{strategy:restart, solutions: all}).*/
+
+find_sum(L,Sum,SumL) :-
+    [H | T] = L,
+    NSum #= Sum + H,
+    find_sum(T,NSum,SumL).
+
+find_sum([],SumL,SumL).
+
+find_square_sum(L,SqSum,SqSumL) :-
+    [H | T] = L,
+    SqH #= H * H,
+    NSqSum #= SqSum + SqH,
+    find_square_sum(T,NSqSum,SqSumL).
+
+find_square_sum([],SqSumL,SqSumL).
 
 /*finds list of length Len , if Len is 4 list is [1,2,3,4]*/
 
@@ -29,18 +51,29 @@ ordered_list(Len,Counter,Ordered) :-
 
 ordered_list(Len,Counter,[]) :- Len < Counter.
 
-find_sum(L,Sum,SumL) :-
+diff_lists(L1,L2) :-
+    L1 \= [],
+    [H | T] = L1,
+    diff_element(H,L2),
+    diff_lists(T,L2).
+
+diff_lists([],_).
+
+diff_element(X,L) :-
+    L \= [],
     [H | T] = L,
-    NSum is Sum + H,
-    check_sum(T,Sum,SumL).
+    X #\= H,
+    diff_element(X,T).
 
-check_sum([],SumL,SumL).
+diff_element(_,[]).
 
-check_square_sum(L,SqSum,SqSumL) :-
+unique_element(L) :-
+    L \= [],
     [H | T] = L,
-    SqH is H * H,
-    NSqSum is SqSum + SqH,
-    check_square_sum(T,NSqSum.SqSumL).
+    diff_element(H,T),
+    unique_element(T).
 
-check_square_sum([],SqSumL,SqSumL).
+unique_element([]).
 
+even(N) :- 
+    mod(N,2) =:= 0.
