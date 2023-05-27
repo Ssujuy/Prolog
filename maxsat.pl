@@ -1,38 +1,45 @@
+:-lib(ic).
+:-lib(branch_and_bound).
+
+
 maxsat(NV, NC, D, F, S, M) :-
     create_formula(NV, NC, D, F),
     length(Vars,NV),
-    Vars #= 0..1,
-    length(Sentence,NC),
-    match_vars(Vars,Sentence,F),
+    Vars #:: 0..1,
+    length(S,NC),
+    match_vars(Vars,S,F),
     length(Clause,NC),
-    clauses_sum(Clause,F),
-    find_cost(Clause,Cost),
-    
-clauses(Clause,F) :-
-   [H1 | T1] = Clauses,
-   [H2 | T2] = F,
-   clauses_sum(H1,H2),
-   clauses(T1,T2).
+    Clause #:: 0..1,
+    clauses_bool(Clause,S),
+    find_cost(Clause,0,M),
+    bb_min(search(Vars,0,input_order,indomain,complete,[]),M,bb_options{strategy:restart, solutions: all}).
 
-clauses([],[]).
+clauses_bool(Clause,S) :-
+    [Hc | Tc] = Clause,
+    [Hs | Ts] = S,
+    c_find_bool(1,Hc,Hs),
+    clauses_bool(Tc,Ts).
 
-clauses_sum(C,F) :-
-   [H | T] = F,
-   C #= H,
-   clauses_sum_rest(C,T).
+c_find_bool(TempC,C,L) :-
+    [H | T] = L,
+    NewC #= TempC or H,
+    c_find_bool(NewC,C,T).
 
-clauses_sum_rest(C,F) :-
-   [H | T] = F,
-   C #= C + H,
-   clauses_sum_rest(C,T).
+c_find_bool(C,C,[]).
 
-clauses_sum_rest(_,[]).
+
+find_cost(Clause,Cost,CostC) :-
+    [H | T] = Clause,
+    NCost #= Cost + H,
+    find_cost(T,NCost,CostC).
+
+find_cost([],CostC,CostC).
 
 match_vars(Vars,Sentence,F) :-
     [Hs | Ts] = Sentence,
     [Hf | Tf] = F,
-    length(Hs,Len),
     length(Hf,Len),
+    length(Hs,Len),
     matching(Vars,Hs,Hf),
     match_vars(Vars,Ts,Tf).
 
@@ -43,9 +50,9 @@ matching(Vars,L1,L2) :-
     [H2 | T2] = L2,
     H2 < 0,
     Value is abs(H2),
-    list_get(Vars,1,H2,Target),
+    list_get(Vars,1,Value,Target),
     H1 #= 1 - Target,
-    mathing(Vars,T1,T2).
+    matching(Vars,T1,T2).
 
 matching(Vars,L1,L2) :-
     [H1 | T1] = L1,
@@ -53,7 +60,7 @@ matching(Vars,L1,L2) :-
     H2 > 0,
     list_get(Vars,1,H2,Target),
     H1 #= Target,
-    mathing(Vars,T1,T2).
+    matching(Vars,T1,T2).
 
 matching(_,[],[]).
 
@@ -95,8 +102,8 @@ rand(N1, N2, R) :-
    random(R1),
    R is R1 mod (N2 - N1 + 1) + N1.
 
-   na dhmiourghw ton ari8mo twn metavlhtwn pou prepei 5 -> L = [x1,x2,x3,x4,x5]
+/*   na dhmiourghw ton ari8mo twn metavlhtwn pou prepei 5 -> L = [x1,x2,x3,x4,x5]
    na ftiaksw mia lista apo F = [[x1,x2],[-x3,x5]] klp
    na valw tis x1,x2 ... na pairnoun times apo 0 mexri 1
    na ftiaksw mia metavlhth gia ka8e protash C1 = x1 or x2 
-   kai sto telos 8a prepei to a8roisma C1+C2+...Cn na einai megisto 
+   kai sto telos 8a prepei to a8roisma C1+C2+...Cn na einai megisto */
