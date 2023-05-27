@@ -12,13 +12,26 @@ maxsat(NV, NC, D, F, S, M) :-
     Clause #:: 0..1,
     clauses_bool(Clause,S),
     find_cost(Clause,0,M),
-    bb_min(search(Vars,0,input_order,indomain,complete,[]),M,bb_options{strategy:restart, solutions: all}).
+    ordered_list(NC,L),
+    member(M,L),
+    bb_min(search(Vars,0,input_order,indomain,complete,[]),M,bb_options{strategy:restart,from:0, to:NC ,solutions: all}).
 
 clauses_bool(Clause,S) :-
     [Hc | Tc] = Clause,
     [Hs | Ts] = S,
     c_find_bool(1,Hc,Hs),
     clauses_bool(Tc,Ts).
+
+clauses_bool([],[]).
+
+ordered_list(Len,Ordered) :-
+    Len > 1,
+    [H | T] = Ordered,
+    H = Len,
+    NLen is Len - 1,
+    ordered_list(NLen,T).
+
+ordered_list(1,[H | T]) :- H = 1,T = [].
 
 c_find_bool(TempC,C,L) :-
     [H | T] = L,
