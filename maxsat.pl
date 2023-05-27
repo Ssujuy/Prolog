@@ -4,8 +4,29 @@ maxsat(NV, NC, D, F, S, M) :-
     Vars #= 0..1,
     length(Sentence,NC),
     match_vars(Vars,Sentence,F),
+    length(Clause,NC),
+    clauses_sum(Clause,F),
+    find_cost(Clause,Cost),
     
+clauses(Clause,F) :-
+   [H1 | T1] = Clauses,
+   [H2 | T2] = F,
+   clauses_sum(H1,H2),
+   clauses(T1,T2).
 
+clauses([],[]).
+
+clauses_sum(C,F) :-
+   [H | T] = F,
+   C #= H,
+   clauses_sum_rest(C,T).
+
+clauses_sum_rest(C,F) :-
+   [H | T] = F,
+   C #= C + H,
+   clauses_sum_rest(C,T).
+
+clauses_sum_rest(_,[]).
 
 match_vars(Vars,Sentence,F) :-
     [Hs | Ts] = Sentence,
@@ -20,7 +41,16 @@ match_vars(_,[],[]).
 matching(Vars,L1,L2) :-
     [H1 | T1] = L1,
     [H2 | T2] = L2,
+    H2 < 0,
     Value is abs(H2),
+    list_get(Vars,1,H2,Target),
+    H1 #= 1 - Target,
+    mathing(Vars,T1,T2).
+
+matching(Vars,L1,L2) :-
+    [H1 | T1] = L1,
+    [H2 | T2] = L2,
+    H2 > 0,
     list_get(Vars,1,H2,Target),
     H1 #= Target,
     mathing(Vars,T1,T2).
