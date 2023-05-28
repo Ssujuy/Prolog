@@ -1,37 +1,29 @@
 :-lib(ic).
 :-lib(branch_and_bound).
 
+#maxsat
 
 maxsat(NV, NC, D, F, S, M) :-
     create_formula(NV, NC, D, F),
-    length(Vars,NV),
-    Vars #:: 0..1,
-    length(S,NC),
-    match_vars(Vars,S,F),
+    length(S,NV),
+    S #:: 0..1,
+    length(Sentence,NC),
+    match_vars(S,Sentence,F),
     length(Clause,NC),
     Clause #:: 0..1,
-    clauses_bool(Clause,S),
+    clauses_bool(Clause,Sentence),
     find_cost(Clause,0,M),
     ordered_list(NC,L),
     member(M,L),
-    bb_min(search(Vars,0,input_order,indomain,complete,[]),M,bb_options{strategy:restart,from:0, to:NC ,solutions: all}).
+    bb_min(search(S,0,input_order,indomain,complete,[]),M,bb_options{strategy:restart,solutions: one}),!.
 
 clauses_bool(Clause,S) :-
     [Hc | Tc] = Clause,
     [Hs | Ts] = S,
-    c_find_bool(1,Hc,Hs),
+    c_find_bool(0,Hc,Hs),
     clauses_bool(Tc,Ts).
 
 clauses_bool([],[]).
-
-ordered_list(Len,Ordered) :-
-    Len > 1,
-    [H | T] = Ordered,
-    H = Len,
-    NLen is Len - 1,
-    ordered_list(NLen,T).
-
-ordered_list(1,[H | T]) :- H = 1,T = [].
 
 c_find_bool(TempC,C,L) :-
     [H | T] = L,
@@ -48,34 +40,43 @@ find_cost(Clause,Cost,CostC) :-
 
 find_cost([],CostC,CostC).
 
-match_vars(Vars,Sentence,F) :-
+match_vars(S,Sentence,F) :-
     [Hs | Ts] = Sentence,
     [Hf | Tf] = F,
     length(Hf,Len),
     length(Hs,Len),
-    matching(Vars,Hs,Hf),
-    match_vars(Vars,Ts,Tf).
+    matching(S,Hs,Hf),
+    match_vars(S,Ts,Tf).
 
 match_vars(_,[],[]).
 
-matching(Vars,L1,L2) :-
+matching(S,L1,L2) :-
     [H1 | T1] = L1,
     [H2 | T2] = L2,
     H2 < 0,
     Value is abs(H2),
-    list_get(Vars,1,Value,Target),
+    list_get(S,1,Value,Target),
     H1 #= 1 - Target,
-    matching(Vars,T1,T2).
+    matching(S,T1,T2).
 
-matching(Vars,L1,L2) :-
+matching(S,L1,L2) :-
     [H1 | T1] = L1,
     [H2 | T2] = L2,
     H2 > 0,
-    list_get(Vars,1,H2,Target),
+    list_get(S,1,H2,Target),
     H1 #= Target,
-    matching(Vars,T1,T2).
+    matching(S,T1,T2).
 
 matching(_,[],[]).
+
+ordered_list(Len,Ordered) :-
+    Len > 1,
+    [H | T] = Ordered,
+    H = Len,
+    NLen is Len - 1,
+    ordered_list(NLen,T).
+
+ordered_list(1,[H | T]) :- H = 1,T = [].
 
 list_get(L,Counter,X,Target) :-
     Counter < X,
