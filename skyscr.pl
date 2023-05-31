@@ -1,8 +1,28 @@
 skyscr(Id, Solution) :-
-    puzzle(Id, Left, Right, Top, Bottom , Board),
+       puzzle(Id, Max, Left, Right, Top, Bottom , Board),
+       Solution = Board,
+       Solution#:: 1..Max,
+       left_skyscr(Left, Solution),
+       right_skyscr(Right, Solution),
+       top_skyscr(Top, Solution),
+       bottom_skyscr(Bottom, Solution),
+       search(,0,input_order,indomain,complete,[]),
 
 
+left_skyscr(Left, Solution) :-
+       [Hl | Tl] = Left,
+       [Hs | Ts] = Solution,
+       Hl = 0,
+       left_skyscr(Tl, Ts).
 
+left_skyscr(Left, Solution) :-
+       [Hl | Tl] = Left,
+       [Hs | Ts] = Solution,
+       Hl \= 0,
+       
+       left_skyscr(Tl, Ts).
+
+left_skyscr([],[]).
 
 
 
