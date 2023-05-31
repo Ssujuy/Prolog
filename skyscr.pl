@@ -1,12 +1,13 @@
+:-lib(ic).
+:-lib(branch_and_bound).
+
+
 skyscr(Id, Solution) :-
        puzzle(Id, Max, Left, Right, Top, Bottom , Board),
        Solution = Board,
        Solution#:: 1..Max,
        left_skyscr(Left, Solution),
-       right_skyscr(Right, Solution),
-       top_skyscr(Top, Solution),
-       bottom_skyscr(Bottom, Solution),
-       search(,0,input_order,indomain,complete,[]),
+       search(Solution,0,input_order,indomain,complete,[]).
 
 
 left_skyscr(Left, Solution) :-
@@ -19,21 +20,58 @@ left_skyscr(Left, Solution) :-
        [Hl | Tl] = Left,
        [Hs | Ts] = Solution,
        Hl \= 0,
-       
+       length(Hs, Len),
+       length(Visible, Len),
+       Visible#:: 0..1,
+       constrain_left_skyscr(Hs,Visible,0),
+       find_sum(Visible,0,TotalSum),
+       TotalSum#=Hl, 
        left_skyscr(Tl, Ts).
 
 left_skyscr([],[]).
 
 
+constrain_left_skyscr(L,Visible,0) :-
+       [Hv | Tv] = Visible,
+       [H | T] = L,
+       Hv#=1,
+       constrain_left_skyscr(T,Tv,H).
+
+constrain_left_skyscr(L,Visible,MaxVar) :-
+       MaxVar \= 0,
+       [Hv | Tv] = Visible,
+       [H | T] = L,
+       H #> MaxVar,
+       Hv#=1,
+       constrain_left_skyscr(T,Tv,H).
+
+constrain_left_skyscr(L,Visible,MaxVar) :-
+       MaxVar \= 0,
+       [Hv | Tv] = Visible,
+       [H | T] = L,
+       H #< MaxVar,
+       Hv#=0,
+       constrain_left_skyscr(T,Tv,MaxVar).
+
+constrain_left_skyscr([],[],_).
+
+
+find_sum(Visible,Sum,TotalSum) :-
+    [H | T] = Visible,
+    NSum #= Sum + H,
+    find_sum(T,NSum,TotalSum).
+
+find_sum([],TotalSum,TotalSum).
 
 
 
 
+set_length(L,N) :-
+       [H | T] = L,
+       length(H,N),
+       set_length(T,N).
 
-
-
-
-
+set_length([],_).
 
 
 puzzle(demo, 5,
