@@ -1,16 +1,13 @@
-:-lib(ic).
+:-lib(gfd).
 :-lib(branch_and_bound).
 
-/*All elemetns of solution are constrained here thn search is calle*/
+/*Κατάφερα να κάνω την υλοποίηση με gfd και nvalues 
+Το Puzzle hard9x9 τρέχει 1,11 sec*/
 
-/*Δυστυχώς μου καθυστερεί πολυ για hard 8x8 , 9x9 .
-Η υλοποίηση έχει γίνει με ic προσπάθησα να βάλω gfd και nvalues ,
-αλλά η διαφορά στον χρόνο ήταν απελιστική με το demo να θέλει 1,5 sec
-για να τρέξει οπότε κράτησα την ic και την παρακάτω υλοποίηση
-(θα το έψαχνα ακόμα περισσότερο αλλά με πιέζει ο χρόνος μέσα στην εξεταστική).
-Το hard7x7 χρειάζεται : 322.89 sec
-Το hard8x8 χρειάζεται : 787.53 sec
-Το hard9x9 χρειάζεται : */
+
+/*
+Take the puzzle id and Take the constraints for the number of visible scryscrapers, for each size.
+All elements of Solution are constrained here then search is called*/
 
 skyscr(Id, Solution) :-
        puzzle(Id, Max, Left, Right, Top, Bottom , Board),
@@ -24,7 +21,9 @@ skyscr(Id, Solution) :-
        bottom_skyscr(Bottom,1,Solution),
        search(Solution,0,most_constrained ,indomain,complete,[]),!.
 
-/*constrains the elements of solution with the left list numbers of visible skyscrapers*/
+/*Constrain the visible scyscrapers from the left side.
+Create a visible list which is the max of every Solution , starting from x1 , x1,x2 , etc.
+Then constrain the number of maximum different max number to be Hl*/
 
 left_skyscr(Left, Solution) :-
        [Hl | Tl] = Left,
@@ -39,13 +38,15 @@ left_skyscr(Left, Solution) :-
        length(Hs, Len),
        length(Visible, Len),
        constrain_skyscr(Hs,Visible,0),
-       find_sum(Visible,0,TotalSum),
-       TotalSum=Hl, 
+       nvalues(Visible, (#=), Hl), 
        left_skyscr(Tl, Ts).
 
 left_skyscr([],[]).
 
-/*constrains the elements of solution with the right list numbers of visible skyscrapers*/
+/*Constrain the visible scyscrapers from the right side.
+Note : That the Solution list is reversed!
+Create a visible list which is the max of every Solution , starting from x1 , x1,x2 , etc.
+Then constrain the number of maximum different max number to be Hr*/
 
 right_skyscr(Right, Solution) :-
        [Hr | Tr] = Right,
@@ -61,13 +62,15 @@ right_skyscr(Right, Solution) :-
        length(Visible, Len),
        reverse_list(Hs,[],HsReverse),
        constrain_skyscr(HsReverse,Visible,0),
-       find_sum(Visible,0,TotalSum),
-       TotalSum=Hr, 
+       nvalues(Visible, (#=), Hr), 
        right_skyscr(Tr, Ts).  
 
 right_skyscr([],[]).
 
-/*constrains the elements of solution with the top list numbers of visible skyscrapers*/
+/*Constrain the visible scyscrapers from the top side.
+Note : The list is found with find_list , which takes a static x each time and increases y.
+Create a visible list which is the max of every Solution , starting from x1 , x1,x2 , etc.
+Then constrain the number of maximum different max number to be Hl*/
 
 top_skyscr(Top, Counter, Solution) :-
        [Ht | Tt] = Top,
@@ -82,8 +85,7 @@ top_skyscr(Top, Counter,Solution) :-
        length(Visible, Len),
        find_list(Solution,Counter,1,Len,YList),
        constrain_skyscr(YList,Visible,0),
-       find_sum(Visible,0,TotalSum),
-       TotalSum=Ht, 
+       nvalues(Visible, (#=), Ht),
        NCounter is Counter + 1,
        top_skyscr(Tt,NCounter,Solution).
 
@@ -91,7 +93,11 @@ top_skyscr([],Counter,Solution) :-
        length(Solution,Len),
        Len < Counter.
 
-/*constrains the elements of solution with the bottom list numbers of visible skyscrapers*/
+/*Constrain the visible scyscrapers from the bottom side.
+Note : The list is found with find_list , which takes a static x each time and increases y.
+Then the list found is reversed , because it is for the bottom side.
+Create a visible list which is the max of every Solution , starting from x1 , x1,x2 , etc.
+Then constrain the number of maximum different max number to be Hl*/
 
 bottom_skyscr(Bottom, Counter, Solution) :-
        [Hb | Tb] = Bottom,
@@ -107,8 +113,7 @@ bottom_skyscr(Bottom, Counter,Solution) :-
        find_list(Solution,Counter,1,Len,YList),
        reverse_list(YList,[],ReversedYList),
        constrain_skyscr(ReversedYList,Visible,0),
-       find_sum(Visible,0,TotalSum),
-       TotalSum=Hb, 
+       nvalues(Visible, (#=), Hb),
        NCounter is Counter + 1,
        bottom_skyscr(Tb,NCounter,Solution).
 
@@ -116,52 +121,38 @@ bottom_skyscr([],Counter,Solution) :-
        length(Solution,Len),
        Len < Counter.
 
-/*Constrains the Visible list elements to 1 when it is larger than thee previous elements
-and to 0 when not , 1st is always 1*/
+/*Constrains every Visible list variable (Hv), to be the max of every H variable and all
+the max of all the previous ones.*/
 
 constrain_skyscr(L,Visible,0) :-
        [Hv | Tv] = Visible,
        [H | T] = L,
-       Hv=1,
+       Hv=H,
        constrain_skyscr(T,Tv,H).
 
 constrain_skyscr(L,Visible,MaxVar) :-
        MaxVar \= 0,
        [Hv | Tv] = Visible,
        [H | T] = L,
-       H #> MaxVar,
-       Hv=1,
-       constrain_skyscr(T,Tv,H).
-
-constrain_skyscr(L,Visible,MaxVar) :-
-       MaxVar \= 0,
-       [Hv | Tv] = Visible,
-       [H | T] = L,
-       H #< MaxVar,
-       Hv=0,
-       constrain_skyscr(T,Tv,MaxVar).
+       NMax#=max(MaxVar,H),
+       Hv=NMax,
+       constrain_skyscr(T,Tv,NMax).
 
 constrain_skyscr([],[],_).
 
-/*findsthe sum of the list and constrains it*/
-
-find_sum(Visible,Sum,TotalSum) :-
-    [H | T] = Visible,
-    NSum is Sum + H,
-    find_sum(T,NSum,TotalSum),!.
-
-find_sum([],TotalSum,TotalSum).
+/*Basically finds the list with a static x index
+and an index y which starts from 1 to Length*/
 
 find_list(Solution,X,Y,Length,YList) :-
        YList = [H | T],
        index_xy(Solution,X,Y,1,1,Target),
        H = Target,
        NY is Y + 1,
-       find_list(Solution,X,NY,Length,T),!.
+       find_list(Solution,X,NY,Length,T).
 
 find_list(_,_,NY,Length,[]) :-  NY > Length.
 
-/*makes elements of list different*/
+/*Makes column elements of list different*/
 
 different_list_y(Solution,Counter) :-
        length(Solution,Len),
@@ -175,6 +166,8 @@ different_list_y(Solution,Counter) :-
        length(Solution,Len),
        Counter > Len.
 
+/*Makes rows elemnts of list different*/
+
 different_list(Solution) :-
        [H | T] = Solution,
        alldifferent(H),
@@ -182,11 +175,11 @@ different_list(Solution) :-
 
 different_list([]).
 
-/*finds element at position X,Y*/
+/*Find element at index x,y . Call index_y to find column of element then index_y to find the element*/
 
 index_xy(L,X,Y,XCounter,YCounter,Target) :-
        index_y(L,Y,YCounter,YL),
-       index_x(YL,X,XCounter,Target),!.
+       index_x(YL,X,XCounter,Target).
 
 index_x(L,X,XCounter,Target) :-
        XCounter < X,
@@ -204,146 +197,10 @@ index_y(L,Y,YCounter,Target) :-
 
 index_y([H | _],Y,Y,H).
 
-/*sets the length of the list L*/
+/*Reverse a list*/
 
-set_length(L,N) :-
-       [H | T] = L,
-       length(H,N),
-       set_length(T,N),!.
+reverse_list([],Reversed,Reversed).
 
-set_length([],_).
+reverse_list([H|T],T1,Reversed) :- reverse_list(T,[H|T1],Reversed).
 
-/*reverse a list*/
-
-reverse_list([],Reversed,Reversed),!.
-
-reverse_list([H|T],T1,Reversed) :- reverse_list(T,[H|T1],Reversed),!.
-
-reverse_list([],Z,Z),!.
-
-
-puzzle(demo, 5,
-       [0,2,0,2,4], [4,0,2,0,0],
-       [0,0,0,0,0], [0,3,0,2,0],
-       [[_,_,_,_,_],
-        [_,_,_,_,_],
-        [_,5,_,_,_],
-        [_,_,_,_,_],
-        [_,_,_,_,_]]).
-
-puzzle(easy4x4, 4, 
-       [3,2,1,3], [1,3,3,2],
-       [3,2,2,1], [2,3,1,2],
-       [[_,_,_,_],
-        [_,_,_,_],
-        [_,_,_,_],
-        [_,_,_,_]]).
-
-puzzle(normal4x4, 4, 
-       [0,0,0,0], [3,0,2,0],
-       [0,0,0,0], [0,0,1,2],
-       [[_,_,_,_],
-        [_,_,_,_],
-        [_,_,_,_],
-        [_,_,_,_]]).
-
-puzzle(hard4x4, 4, 
-       [0,2,2,0], [0,0,0,0],
-       [0,0,0,0], [0,2,0,3],
-       [[_,_,2,_],
-        [_,_,_,_],
-        [_,_,4,_],
-        [_,_,_,_]]).
-
-puzzle(easy5x5, 5, 
-       [5,2,2,1,3], [1,4,2,4,2],
-       [4,2,3,2,1], [2,3,1,3,2],
-       [[_,_,_,_,_],
-        [_,_,_,_,_],
-        [_,_,_,_,_],
-        [_,_,_,_,_],
-        [_,_,_,_,_]]).
-
-puzzle(normal5x5, 5, 
-       [0,3,0,0,0], [0,0,0,0,4],
-       [3,2,0,0,0], [0,0,0,5,3],
-       [[_,_,_,_,_],
-        [_,_,_,_,_],
-        [_,_,_,_,_],
-        [_,_,_,_,_],
-        [_,_,_,_,_]]).
-
-puzzle(hard5x5, 5, 
-       [0,2,4,0,0], [0,0,0,3,0],
-       [0,0,2,4,0], [0,3,0,0,0],
-       [[_,_,_,2,_],
-        [_,_,_,_,_],
-        [_,_,_,_,_],
-        [_,_,_,_,_],
-        [_,_,_,_,1]]).
-
-puzzle(easy6x6, 6, 
-       [2,3,3,1,2,3], [1,2,2,4,3,2],
-       [2,4,2,3,2,1], [2,2,2,1,3,3],
-       [[_,_,_,_,4,_],
-        [_,_,_,_,_,_],
-        [_,_,_,_,_,5],
-        [_,_,3,_,_,_],
-        [_,_,_,3,_,_],
-        [3,_,_,_,_,_]]).
-
-puzzle(normal6x6, 6, 
-       [0,4,0,3,0,0], [0,0,0,0,5,0],
-       [3,1,0,3,0,4], [0,0,0,3,4,0],
-       [[_,_,_,_,_,_],
-        [_,_,_,_,_,_],
-        [_,_,_,1,_,_],
-        [_,_,_,_,_,_],
-        [_,_,_,_,_,_],
-        [_,_,2,_,_,_]]).
-
-puzzle(hard6x6, 6, 
-       [4,0,2,0,2,0], [0,3,2,3,0,0],
-       [0,2,2,2,4,0], [0,0,0,4,0,3],
-       [[_,_,_,_,_,_],
-        [_,_,_,_,_,_],
-        [_,_,_,_,_,_],
-        [_,_,3,_,_,_],
-        [_,_,_,_,_,_],
-        [_,_,_,_,_,_]]).
-
-puzzle(hard7x7, 7,
-       [2,3,0,1,3,2,0], [0,2,0,0,0,0,3],
-       [3,0,3,3,0,0,0], [0,0,2,0,3,0,0],
-       [[_,1,_,_,_,_,_],
-        [_,_,_,_,4,_,_],
-        [_,5,_,_,_,_,_],
-        [_,_,_,_,_,4,_],
-        [_,_,_,_,_,_,_],
-        [_,_,_,_,1,_,_],
-        [_,_,_,5,_,_,_]]).
-
-puzzle(hard8x8, 8,
-       [3,0,4,2,0,3,3,0], [0,0,3,3,5,3,4,0],
-       [2,0,0,5,3,0,0,0], [3,0,0,0,4,4,0,0],
-       [[_,_,5,_,_,_,_,_],
-        [_,4,3,_,_,_,2,_],
-        [_,_,_,_,_,_,_,1],
-        [_,_,_,_,_,_,_,_],
-        [_,_,_,_,_,5,_,2],
-        [_,_,_,8,_,_,_,_],
-        [_,6,_,_,_,1,4,_],
-        [_,_,_,_,_,_,_,_]]).
-
-puzzle(hard9x9, 9,
-       [0,0,0,0,1,5,3,0,3], [0,3,3,2,3,0,0,5,0],
-       [2,3,0,0,3,4,2,0,3], [3,0,6,4,3,0,2,2,4],
-       [[_,_,_,_,_,_,_,_,_],
-        [_,1,_,_,_,_,3,_,_],
-        [_,_,_,_,1,2,_,_,5],
-        [_,_,_,4,2,6,_,_,_],
-        [_,_,_,_,_,_,_,1,_],
-        [_,_,7,_,_,8,_,_,_],
-        [_,_,_,_,_,_,_,3,_],
-        [4,_,_,_,_,_,_,_,2],
-        [_,_,_,_,_,9,_,_,_]]).
+reverse_list([],Z,Z).
