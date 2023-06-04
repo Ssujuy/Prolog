@@ -1,16 +1,12 @@
-:-lib(ic).
+:-lib(gfd).
 :-lib(branch_and_bound).
 
 /*All elemetns of solution are constrained here thn search is calle*/
 
 /*Δυστυχώς μου καθυστερεί πολυ για hard 8x8 , 9x9 .
-Η υλοποίηση έχει γίνει με ic προσπάθησα να βάλω gfd και nvalues ,
-αλλά η διαφορά στον χρόνο ήταν απελιστική με το demo να θέλει 1,5 sec
-για να τρέξει οπότε κράτησα την ic και την παρακάτω υλοποίηση
-(θα το έψαχνα ακόμα περισσότερο αλλά με πιέζει ο χρόνος μέσα στην εξεταστική).
-Το hard7x7 χρειάζεται : 322.89 sec
-Το hard8x8 χρειάζεται : 787.53 sec
-Το hard9x9 χρειάζεται : */
+Η υλοποίηση έχει γίνει με ic ροσππάθησα να βάλω gfd και nvalues ,
+αλλά η διαφορά στον χρόννο ήταν αππελιστική με το demo να θέλει 40 sec 
+για να τρέξει οππότε κράτησα την ic και την παρακάτω υλοποίηση*/
 
 skyscr(Id, Solution) :-
        puzzle(Id, Max, Left, Right, Top, Bottom , Board),
@@ -22,7 +18,8 @@ skyscr(Id, Solution) :-
        right_skyscr(Right, Solution),
        top_skyscr(Top,1,Solution),
        bottom_skyscr(Bottom,1,Solution),
-       search(Solution,0,most_constrained ,indomain,complete,[]),!.
+       search(Solution,0,most_constrained_per_value,reverse_split,complete,[]),!.
+
 
 /*constrains the elements of solution with the left list numbers of visible skyscrapers*/
 
@@ -37,10 +34,9 @@ left_skyscr(Left, Solution) :-
        [Hs | Ts] = Solution,
        Hl \= 0,
        length(Hs, Len),
-       length(Visible, Len),
-       constrain_skyscr(Hs,Visible,0),
-       find_sum(Visible,0,TotalSum),
-       TotalSum=Hl, 
+       length(Visible,Len),
+       find_visible(Hs,Visible,[]),
+       nvalues(Visible,(=),Hl), 
        left_skyscr(Tl, Ts).
 
 left_skyscr([],[]).
@@ -60,9 +56,8 @@ right_skyscr(Right, Solution) :-
        length(Hs, Len),
        length(Visible, Len),
        reverse_list(Hs,[],HsReverse),
-       constrain_skyscr(HsReverse,Visible,0),
-       find_sum(Visible,0,TotalSum),
-       TotalSum=Hr, 
+       find_visible(HsReverse,Visible,[]),
+       nvalues(Visible,(=),Hr), 
        right_skyscr(Tr, Ts).  
 
 right_skyscr([],[]).
@@ -81,9 +76,8 @@ top_skyscr(Top, Counter,Solution) :-
        length(Solution, Len),
        length(Visible, Len),
        find_list(Solution,Counter,1,Len,YList),
-       constrain_skyscr(YList,Visible,0),
-       find_sum(Visible,0,TotalSum),
-       TotalSum=Ht, 
+       find_visible(YList,Visible,[]),
+       nvalues(Visible,(=),Ht),
        NCounter is Counter + 1,
        top_skyscr(Tt,NCounter,Solution).
 
@@ -106,9 +100,8 @@ bottom_skyscr(Bottom, Counter,Solution) :-
        length(Visible, Len),
        find_list(Solution,Counter,1,Len,YList),
        reverse_list(YList,[],ReversedYList),
-       constrain_skyscr(ReversedYList,Visible,0),
-       find_sum(Visible,0,TotalSum),
-       TotalSum=Hb, 
+       find_visible(ReversedYList,Visible,[]),
+       nvalues(Visible,(=),Hb),
        NCounter is Counter + 1,
        bottom_skyscr(Tb,NCounter,Solution).
 
@@ -119,45 +112,31 @@ bottom_skyscr([],Counter,Solution) :-
 /*Constrains the Visible list elements to 1 when it is larger than thee previous elements
 and to 0 when not , 1st is always 1*/
 
-constrain_skyscr(L,Visible,0) :-
+find_visible(L,Visible,[]) :-
        [Hv | Tv] = Visible,
        [H | T] = L,
-       Hv=1,
-       constrain_skyscr(T,Tv,H).
+       MaxL=H,
+       Hv=H,
+       find_visible(T,Tv,MaxL).
 
-constrain_skyscr(L,Visible,MaxVar) :-
-       MaxVar \= 0,
+find_visible(L,Visible,MaxL) :-
+       MaxL \= [],
        [Hv | Tv] = Visible,
        [H | T] = L,
-       H #> MaxVar,
-       Hv=1,
-       constrain_skyscr(T,Tv,H).
+       append(MaxL,H,NMaxL),
+       max(NMaxL,Hv),
+       find_visible(T,Tv,NMaxL),
 
-constrain_skyscr(L,Visible,MaxVar) :-
-       MaxVar \= 0,
-       [Hv | Tv] = Visible,
-       [H | T] = L,
-       H #< MaxVar,
-       Hv=0,
-       constrain_skyscr(T,Tv,MaxVar).
-
-constrain_skyscr([],[],_).
+find_visible([],[],_).
 
 /*findsthe sum of the list and constrains it*/
-
-find_sum(Visible,Sum,TotalSum) :-
-    [H | T] = Visible,
-    NSum is Sum + H,
-    find_sum(T,NSum,TotalSum),!.
-
-find_sum([],TotalSum,TotalSum).
 
 find_list(Solution,X,Y,Length,YList) :-
        YList = [H | T],
        index_xy(Solution,X,Y,1,1,Target),
        H = Target,
        NY is Y + 1,
-       find_list(Solution,X,NY,Length,T),!.
+       find_list(Solution,X,NY,Length,T).
 
 find_list(_,_,NY,Length,[]) :-  NY > Length.
 
@@ -186,7 +165,7 @@ different_list([]).
 
 index_xy(L,X,Y,XCounter,YCounter,Target) :-
        index_y(L,Y,YCounter,YL),
-       index_x(YL,X,XCounter,Target),!.
+       index_x(YL,X,XCounter,Target).
 
 index_x(L,X,XCounter,Target) :-
        XCounter < X,
@@ -209,17 +188,17 @@ index_y([H | _],Y,Y,H).
 set_length(L,N) :-
        [H | T] = L,
        length(H,N),
-       set_length(T,N),!.
+       set_length(T,N).
 
 set_length([],_).
 
 /*reverse a list*/
 
-reverse_list([],Reversed,Reversed),!.
+reverse_list([],Reversed,Reversed).
 
-reverse_list([H|T],T1,Reversed) :- reverse_list(T,[H|T1],Reversed),!.
+reverse_list([H|T],T1,Reversed) :- reverse_list(T,[H|T1],Reversed).
 
-reverse_list([],Z,Z),!.
+reverse_list([],Z,Z).
 
 
 puzzle(demo, 5,
