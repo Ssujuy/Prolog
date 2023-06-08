@@ -1,13 +1,15 @@
 :-lib(gfd).
 :-lib(branch_and_bound).
 
-assignment_csp(NP,MT,ASP,ASA,Couples) :-
+assignment_csp(NP,MT,ASP,ASA,Acts) :-
     findall(X,activity(X,act(_,_)),TotalActivities),
     length(TotalActivities,Len),
     length(Acts,Len),
     Acts #:: 1..NP,
     act_index(TotalActivities,1,ActIndex),
-    find_couples(ActIndex,0,Couples).
+    sort_list(ActIndex,Sorted),
+    find_couples(Sorted,ActCouples,Couples),
+    constrain_acts(Couples,Acts).
     
 
 constrain_acts(Couples,Acts) :-
@@ -18,55 +20,20 @@ constrain_acts(Couples,Acts) :-
     ValueI#\=ValueJ,
     constrain_acts(T,Acts).
 
-constrain_acts([],_,_).
+constrain_acts([],_).
 
-find_couples(ActIndex,Current,Couples) :-
-    Current = 0,
-    ActIndex = [H | _],
-    NCurrent = H,
-    find_couples(ActIndex,NCurrent,Couples).
-
-find_couples(ActIndex,Current,Couples) :-
-    Current \= 0,
-    Couples = [Hc | Tc],
-    find_activity_couple(ActIndex,Current,Couple),
-    remove_list(ActIndex,Current,NActIndex),
-    remove_list(NActIndex,Couple,NewActIndex),
-    NewActIndex \= [],
-    Couple = (IndexCouple,_),
-    Current = (IndexC,_),
-    Hc = (IndexC,IndexCouple),
-    [Ha | _] = NewActIndex,
-    NewCurrent = Ha,
-    find_couples(NewActIndex,NewCurrent,Tc).
-
-find_couples(ActIndex,Current,Couples) :-
-    Current \= 0,
-    length(ActIndex,2),
-    Couples = [Hc | Tc],
-    [H1 | T1] = ActIndex,
-    T1 = [H2 | []],
-    H1 = (Index1,_),
-    H2 = (Index2,_),
+find_couples(Sorted,ActCouples,Couples) :-
+    [Hs1 | Ts1] = Sorted,
+    [Hs2 | Ts2] = Ts1,
+    Hs1 = (Index1,Act1),
+    Hs2 = (Index2,Act2),
+    [Ha | Ta] = ActCouples,
+    [Hc | Tc] = Couples,
+    Ha = (Act1,Act2),
     Hc = (Index1,Index2),
-    find_couples([],Current,Tc).
+    find_couples(Ts2,Ta,Tc).
 
-find_couples([],_,[]). 
-
-find_activity_couple(ActIndex,Current,Couple) :-
-    [H | _] = ActIndex,
-    H \= Current,
-    Current = (_,ActC),
-    H = (_,ActH),
-    activity(ActC,act(StartC,EndC)),
-    activity(ActH,act(StartH,_)),
-    StartH >= StartC,
-    StartH =< EndC,
-    Couple = H.
-
-find_activity_couple(ActIndex,Current,Couple) :-
-    [_ | T] = ActIndex,
-    find_activity_couple(T,Current,Couple).
+find_couples([],[],[]).
 
 act_index(TotalActivities,Counter,ActIndex) :-
     [Ht | Tt] = TotalActivities,
@@ -90,6 +57,32 @@ remove_list(L,X,Final) :-
     remove_list(T1,[],Final),!.
 
 remove_list([],_,[]).
+
+sort_list(List,Sorted) :-
+    sorting(List,[],Sorted).
+
+sorting([],Acc,Acc).
+
+sorting([H|T],Acc,Sorted) :-
+    insert(H,Acc,NAcc),
+    sorting(T,NAcc,Sorted).
+   
+insert(X,[Y|T],[Y|NT]) :-
+    X = (_,ActX),
+    Y = (_,ActY),
+    activity(ActX,act(XStart,_)),
+    activity(ActY,act(YStart,_)),
+    XStart > YStart,
+	insert(X,T,NT),!.
+
+insert(X,[Y|T],[X,Y|T]) :- 
+    X = (_,ActX),
+    Y = (_,ActY),
+    activity(ActX,act(XStart,_)),
+    activity(ActY,act(YStart,_)),
+    XStart =< YStart.
+
+insert(X,[],[X]).
 
 
 activity(a001, act(41,49)).
