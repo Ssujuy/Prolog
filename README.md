@@ -7,7 +7,7 @@
 4. [Crossword Solver Project](#crossword-solver-project-crosswordpl)
 5. [Search Problem project](#search-problem-project-numpartpl)
 6. [Assignment Project](#assignment-project-assignmentpl)
-7. [Activity Assignment CSP project](#activity-assignment-csp-project-assignmentcsppl)
+7. [Activity Assignment CSP project](#activity-assignment-csp-project-assignment_csppl)
 
 
 ## Pancakes project (pancakes.pl)
