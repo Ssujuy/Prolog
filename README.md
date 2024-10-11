@@ -1,13 +1,13 @@
 # Prolog Projects
 
 ## Table of Contents
-1. [Pancakes Project](#pancakes-project)
-2. [Skyscraper Puzzle Project](#skyscraper-puzzle-solver-project)
-3. [MaxSAT Project](#maxsat-project)
-4. [Crossword Solver Project](#crossword-solver-project)
-5. [Search Problem project](#search-problem-project)
-6. [Assignment Project](#assignment-project)
-7. [Activity Assignment CSP project](#activity-assignment-csp-project)
+1. [Pancakes Project](#pancakes-project-pancakespl)
+2. [Skyscraper Puzzle Project](#skyscraper-puzzle-solver-project-skyscrpl)
+3. [MaxSAT Project](#maxsat-project-maxsatpl)
+4. [Crossword Solver Project](#crossword-solver-project-crosswordpl)
+5. [Search Problem project](#search-problem-project-numpartpl)
+6. [Assignment Project](#assignment-project-assignmentpl)
+7. [Activity Assignment CSP project](#activity-assignment-csp-project-assignmentcsppl)
 
 
 ## Pancakes project (pancakes.pl)
